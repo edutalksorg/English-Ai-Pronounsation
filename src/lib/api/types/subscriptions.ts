@@ -16,7 +16,11 @@ export interface CreatePlanRequest {
   price: number;
   currency: string;
   billingCycle: BillingCycle;
-  features: PlanFeatures;
+  "features": {
+    "additionalProp1": "string",
+    "additionalProp2": "string",
+    "additionalProp3": "string"
+  },
   isActive: boolean;
   displayOrder: number;
   trialDays: number;

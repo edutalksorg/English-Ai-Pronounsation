@@ -118,6 +118,37 @@ All colors MUST be HSL.
   }
 }
 
+/* Ensure native inputs/textarea/selects remain visible in dark mode even when components use raw elements */
+@layer base {
+  input,
+  textarea,
+  select {
+    @apply rounded-md px-3 py-2;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--input));
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.6);
+  }
+
+  /* Dark mode overrides: use theme CSS variables so components don't hardcode colors */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--input));
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.7);
+  }
+}
+
 @layer utilities {
   .gradient-hero {
     background: var(--gradient-hero);

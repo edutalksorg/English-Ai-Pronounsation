@@ -1,16 +1,29 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+// src/App.tsx
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 
 // ---------- Public ----------
-import Index from "@/pages/Index";
+import Index from "./pages/Index";
 import Login from "@/pages/Auth/Login";
 import Register from "@/pages/Auth/Register";
 import ForgotPassword from "@/pages/Auth/ForgotPassword";
 import ChangePassword from "@/pages/Auth/ChangePassword";
-import ConfirmEmail from "./pages/Auth/ConfirmEmail";
-import ResendEmailConfirmation from "./pages/Auth/ResendEmailConfirmation";
+import ConfirmEmail from "@/pages/Auth/ConfirmEmail";
+import ResendEmailConfirmation from "@/pages/Auth/ResendEmailConfirmation";
+
+// ---------- User ----------
+import Dashboard from "@/pages/Dashboard";
+import ProfilePage from "@/pages/Profile/ProfilePage"; // Profile route (must exist at this path)
+import TopicDetail from "@/pages/TopicDetail";
+import WalletPage from "@/pages/user/Wallet";
+import ReferralsPage from "@/pages/user/Referrals";
+import TrackProgressPage from "@/pages/user/TrackProgress";
+import SubscriptionsPage from "@/pages/Subscriptions/SubscriptionsPage";
+import CouponsPage from "@/pages/user/Coupons";
+import SettingsPage from "@/pages/user/Settings";
 
 // ---------- Admin (First 4 modules wired) ----------
+import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import AdminTransactions from "@/pages/Admin/AdminTransactions";
 import AdminWithdrawals from "@/pages/Admin/AdminWithdrawals";
 import AdminRefunds from "@/pages/Admin/AdminRefunds";
@@ -25,18 +38,35 @@ import ApiSmoke from "@/pages/ApiSmoke";
 import Applications from "@/pages/Applications";
 import { useAuth } from "@/contexts/AuthContext";
 
-function RequireAdmin({ children }: { children: JSX.Element }) {
+/** Protect any route for authenticated users */
+function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="p-6">Loading...</div>;
-  if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-    return <div className="p-6">Unauthorized</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+/** Protect admin-only routes */
+function RequireAdmin({ children }: { children: JSX.Element }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <div className="p-6">Loading...</div>;
+
+  if (!user || user.role?.toLowerCase() !== "admin") {
+    return <Navigate to="/dashboard" replace />;
   }
+
   return children;
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Navbar />
       <Routes>
         {/* Public */}
@@ -48,12 +78,106 @@ export default function App() {
         <Route path="/confirm-email" element={<ConfirmEmail />} />
         <Route path="/resend-email-confirmation" element={<ResendEmailConfirmation />} />
 
-        {/* Admin */}
-        <Route path="/admin/transactions" element={<AdminTransactions />} />
-        <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
-        <Route path="/admin/refunds" element={<AdminRefunds />} />
-        <Route path="/admin/instructor-review" element={<AdminInstructorReview />} />
-        <Route path="/admin/wallet-adjust" element={<WalletAdjust />} />
+        {/* User dashboard (protected) */}
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          }
+        />
+
+        {/* Profile page (protected) */}
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <ProfilePage />
+            </RequireAuth>
+          }
+        />
+
+        {/* User wallet & referrals */}
+        <Route
+          path="/user/wallet"
+          element={
+            <RequireAuth>
+              <WalletPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/user/referrals"
+          element={
+            <RequireAuth>
+              <ReferralsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/user/progress"
+          element={
+            <RequireAuth>
+              <TrackProgressPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Subscriptions module */}
+        <Route
+          path="/subscriptions"
+          element={
+            <RequireAuth>
+              <SubscriptionsPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Coupons */}
+        <Route
+          path="/user/coupons"
+          element={
+            <RequireAuth>
+              <CouponsPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Settings */}
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Topic detail page (protected) */}
+        <Route
+          path="/topics/:id"
+          element={
+            <RequireAuth>
+              <TopicDetail />
+            </RequireAuth>
+          }
+        />
+
+        {/* Admin area */}
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminDashboard />
+            </RequireAdmin>
+          }
+        />
+        <Route path="/admin/transactions" element={<RequireAdmin><AdminTransactions /></RequireAdmin>} />
+        <Route path="/admin/withdrawals" element={<RequireAdmin><AdminWithdrawals /></RequireAdmin>} />
+        <Route path="/admin/refunds" element={<RequireAdmin><AdminRefunds /></RequireAdmin>} />
+        <Route path="/admin/instructor-review" element={<RequireAdmin><AdminInstructorReview /></RequireAdmin>} />
+        <Route path="/admin/wallet-adjust" element={<RequireAdmin><WalletAdjust /></RequireAdmin>} />
         <Route path="/admin/subscriptions" element={<RequireAdmin><SubscriptionsAdmin /></RequireAdmin>} />
         <Route path="/admin/topic-categories" element={<RequireAdmin><TopicCategoriesAdmin /></RequireAdmin>} />
         <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />

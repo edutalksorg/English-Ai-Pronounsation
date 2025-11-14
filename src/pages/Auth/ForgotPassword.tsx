@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { forgotPassword } from "@/lib/api/types/auth";
+import { Input } from "@/components/ui/input";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -24,12 +25,11 @@ const ForgotPassword: React.FC = () => {
     <div className="max-w-md mx-auto mt-16 p-6 border rounded shadow-sm">
       <h2 className="text-xl font-semibold mb-4">Forgot Password</h2>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <input
+        <Input
           type="email"
           placeholder="Enter your registered email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border rounded"
           required
         />
         <button

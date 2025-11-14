@@ -1,58 +1,214 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Mic, Square, Volume2 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+// src/components/dashboard/AIPronunciation.tsx
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Mic, Square, Volume2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import * as PronunciationAPI from "@/lib/api/types/pronunciation";
 
-const SAMPLE_PHRASES = [
-  'The quick brown fox jumps over the lazy dog',
-  'Communication is the key to success',
-  'Practice makes perfect',
-  'Knowledge is power',
-];
-
-export const AIPronunciation = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [currentPhrase, setCurrentPhrase] = useState(SAMPLE_PHRASES[0]);
-  const [score, setScore] = useState<number | null>(null);
+export const AIPronunciation: React.FC = () => {
   const { toast } = useToast();
 
-  const startRecording = () => {
-    setIsRecording(true);
-    toast({
-      title: 'Recording started',
-      description: 'Speak clearly into your microphone',
-    });
+  const [isRecording, setIsRecording] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [score, setScore] = useState<number | null>(null);
 
-    setTimeout(() => {
-      stopRecording();
-    }, 3000);
-  };
+  // paragraphs from backend
+  const [paragraphs, setParagraphs] = useState<Array<{ id: string; title: string; text: string }>>([]);
+  const [selectedParagraphId, setSelectedParagraphId] = useState<string | null>(null);
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    setTimeout(() => {
-      const randomScore = Math.floor(Math.random() * 20) + 80;
-      setScore(randomScore);
-      toast({
-        title: 'Analysis complete',
-        description: `Your pronunciation score: ${randomScore}%`,
-      });
-    }, 1000);
-  };
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
-  const playPhrase = () => {
-    toast({
-      title: 'Playing audio',
-      description: 'Listen to the correct pronunciation',
-    });
-  };
+  // load paragraphs on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const res: any = await PronunciationAPI.listParagraphs({ pageNumber: 1, pageSize: 50 });
+        // Handle different response shapes: { data: [] }, array, { items: [] }, etc.
+        let list: any[] = [];
+        if (Array.isArray(res)) {
+          list = res;
+        } else if (Array.isArray(res?.data)) {
+          list = res.data;
+        } else if (Array.isArray(res?.items)) {
+          list = res.items;
+        }
+        
+        if (list.length > 0) {
+          const validParagraphs = list
+            .filter((p: any) => p?.id) // Only include paragraphs with an id
+            .map((p: any) => ({ 
+              id: p.id, 
+              title: p.title ?? p.name ?? "Untitled", 
+              text: p.text ?? p.content ?? "" 
+            }));
+          setParagraphs(validParagraphs);
+          if (validParagraphs.length > 0) {
+            setSelectedParagraphId(validParagraphs[0].id);
+          }
+        } else {
+          setParagraphs([]);
+          setSelectedParagraphId(null);
+        }
+      } catch (err) {
+        console.error("Failed to load paragraphs:", err);
+        toast({
+          title: "Unable to load paragraphs",
+          description: "Check network or server logs.",
+          variant: "destructive",
+        });
+        setParagraphs([]);
+        setSelectedParagraphId(null);
+      }
+    }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const newPhrase = () => {
-    const randomPhrase = SAMPLE_PHRASES[Math.floor(Math.random() * SAMPLE_PHRASES.length)];
-    setCurrentPhrase(randomPhrase);
+  // start recording
+  const startRecording = async () => {
     setScore(null);
+    setAudioUrl(null);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({
+        title: "Microphone not supported",
+        description: "Your browser doesn't support audio recording.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+
+      recorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+
+      toast({ title: "Recording started", description: "Speak clearly into the microphone." });
+    } catch (err: any) {
+      console.error("getUserMedia error:", err);
+      toast({
+        title: "Microphone access denied",
+        description: err?.message ?? "Please allow microphone permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // stop recording and send to backend (ParagraphId + AudioFile)
+  const stopRecording = async () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
+    recorder.stop();
+    try {
+      recorder.stream.getTracks().forEach((t) => t.stop());
+    } catch {}
+    setIsRecording(false);
+    setAnalyzing(true);
+
+    try {
+      // give recorder a short moment to flush
+      await new Promise((r) => setTimeout(r, 200));
+      const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+
+      if (!selectedParagraphId) {
+        toast({
+          title: "No paragraph selected",
+          description: "Please select a paragraph to analyze.",
+          variant: "destructive",
+        });
+        setAnalyzing(false);
+        return;
+      }
+
+      const form = new FormData();
+      // backend docs: ParagraphId + AudioFile
+      form.append("ParagraphId", selectedParagraphId);
+      form.append("AudioFile", blob, "recording.webm");
+
+      // call API (assessForm posts FormData)
+      const res: any = await PronunciationAPI.assessForm(form);
+      // docs say: 202 Accepted -> body is string (operation id)
+      const data = res ?? res?.data ?? res;
+
+      // If server returned a string id (202), show submitted message.
+      if (typeof data === "string" && data.length > 0) {
+        toast({
+          title: "Submitted",
+          description: "Assessment submitted. Results will be available shortly (check history).",
+        });
+        // optionally: navigate to history or poll for result using data as id
+        // e.g. setTimeout / polling calls to GET /api/v1/pronunciation/attempts/{id}
+        setAnalyzing(false);
+        recordedChunksRef.current = [];
+        mediaRecorderRef.current = null;
+        return;
+      }
+
+      // Otherwise, try to parse immediate score (some backends may return it)
+      const detectedScore =
+        data?.overallScore ??
+        data?.pronunciationAccuracy ??
+        data?.score ??
+        data?.data?.overallScore ??
+        data?.data?.score ??
+        (typeof data === "number" ? data : null);
+
+      if (typeof detectedScore === "number") {
+        const rounded = Math.round(detectedScore);
+        setScore(rounded);
+        toast({ title: "Analysis complete", description: `Your pronunciation score: ${rounded}%` });
+      } else {
+        console.warn("Unexpected assess response:", data);
+        toast({
+          title: "Submitted",
+          description: "Assessment submitted. Server returned unexpected format; check history later.",
+        });
+      }
+    } catch (err: any) {
+      console.error("Assess error:", err);
+      const msg = err?.response?.data?.detail ?? err?.response?.data ?? err?.message ?? "Network error";
+      toast({ title: "Analysis failed", description: String(msg), variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+      recordedChunksRef.current = [];
+      mediaRecorderRef.current = null;
+    }
+  };
+
+  const playRecorded = () => {
+    if (!audioUrl) {
+      toast({ title: "No recording", description: "Record first.", variant: "destructive" });
+      return;
+    }
+    new Audio(audioUrl).play().catch((e) => {
+      console.error("Playback failed:", e);
+      toast({ title: "Playback failed", description: String(e?.message ?? e), variant: "destructive" });
+    });
   };
 
   return (
@@ -63,84 +219,84 @@ export const AIPronunciation = () => {
             <Mic className="h-5 w-5" />
             AI Pronunciation Feedback
           </CardTitle>
-          <CardDescription>
-            Practice your pronunciation and get instant AI-powered feedback
-          </CardDescription>
+          <CardDescription>Practice paragraphs from server, submit audio for assessment.</CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-6">
-          <div className="bg-muted rounded-lg p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Practice this phrase:</p>
-            <p className="text-2xl font-semibold">{currentPhrase}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={playPhrase}
-              className="mt-4"
-            >
-              <Volume2 className="h-4 w-4 mr-2" />
-              Listen
-            </Button>
-          </div>
-
-          <div className="flex flex-col items-center gap-6">
-            <div
-              className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${
-                isRecording
-                  ? 'bg-red-500 animate-pulse'
-                  : 'gradient-hero'
-              }`}
-            >
-              {isRecording ? (
-                <Square className="h-12 w-12 text-white" />
-              ) : (
-                <Mic className="h-12 w-12 text-white" />
-              )}
-            </div>
-
-            <div className="text-center space-y-2">
-              <Button
-                size="lg"
-                onClick={isRecording ? stopRecording : startRecording}
-                variant={isRecording ? 'destructive' : 'default'}
-                className={!isRecording ? 'gradient-hero' : ''}
+          <div className="grid gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Choose paragraph</label>
+              <select
+                value={selectedParagraphId ?? ""}
+                onChange={(e) => setSelectedParagraphId(e.target.value)}
+                className="w-full p-2 border rounded"
               >
-                {isRecording ? 'Stop Recording' : 'Start Recording'}
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                {isRecording ? 'Recording... Speak now' : 'Click to start practicing'}
-              </p>
+                {paragraphs.length === 0 && <option value="">No paragraphs available</option>}
+                {paragraphs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title ?? p.text?.slice(0, 80) ?? p.id}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          {score !== null && (
-            <Card className="border-2 border-primary/50">
-              <CardContent className="p-6 space-y-4">
-                <h3 className="font-semibold text-lg">Your Score</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Pronunciation Accuracy</span>
-                    <span className="font-bold text-2xl">{score}%</span>
+            <div className="bg-muted rounded-lg p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Selected paragraph preview</p>
+              <div className="text-left max-h-40 overflow-auto p-2 bg-white rounded border">
+                {paragraphs.find((x) => x.id === selectedParagraphId)?.text ?? "No paragraph selected."}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-6">
+              <div
+                className={`w-28 h-28 rounded-full flex items-center justify-center transition-all ${
+                  isRecording ? "bg-red-500 animate-pulse" : "gradient-hero"
+                }`}
+              >
+                {isRecording ? (
+                  <Square className="h-10 w-10 text-white" />
+                ) : (
+                  <Mic className="h-10 w-10 text-white" />
+                )}
+              </div>
+
+              <div className="space-y-2 text-center">
+                <Button
+                  size="lg"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  variant={isRecording ? "destructive" : "default"}
+                  disabled={analyzing}
+                >
+                  {isRecording ? "Stop Recording" : analyzing ? "Analyzing..." : "Start Recording"}
+                </Button>
+
+                <div className="flex gap-2 justify-center mt-2">
+                  <Button size="sm" variant="outline" onClick={playRecorded} disabled={!audioUrl}>
+                    <Volume2 className="w-4 h-4 mr-2" /> Play
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {score !== null && (
+              <Card className="border-2 border-primary/50">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <h3 className="font-semibold">Your Score</h3>
+                      <div className="text-sm text-muted-foreground">Pronunciation accuracy</div>
+                    </div>
+                    <div className="text-2xl font-bold">{score}%</div>
                   </div>
                   <Progress value={score} className="h-3" />
-                </div>
-                <div className="pt-4 space-y-2">
-                  <h4 className="font-medium text-sm">Feedback:</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {score >= 90
-                      ? 'Excellent! Your pronunciation is very clear.'
-                      : score >= 70
-                      ? 'Good effort! Keep practicing for better results.'
-                      : 'Keep practicing! Focus on clarity and pace.'}
-                  </p>
-                </div>
-                <Button onClick={newPhrase} variant="outline" className="w-full">
-                  Try Another Phrase
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 };
+
+export default AIPronunciation;

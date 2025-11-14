@@ -1,119 +1,142 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Users, MessageSquare, Trophy, Mic, Phone } from 'lucide-react';
+// src/pages/Index.tsx
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Mic, BookOpen, Phone, Brain } from "lucide-react";
 
 export default function Index() {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  // If user is logged in, redirect to dashboard
+  React.useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const features = [
     {
-      icon: <Phone className="h-6 w-6" />,
-      title: 'Voice Calling',
-      description: 'Connect with real learners worldwide for practice conversations',
+      icon: Mic,
+      title: "AI Pronunciation",
+      description: "Get real-time feedback on your English pronunciation with our advanced AI technology",
+      color: "from-purple-500 to-pink-500"
     },
     {
-      icon: <MessageSquare className="h-6 w-6" />,
-      title: 'Daily Topics',
-      description: 'Fresh learning content delivered every day to keep you engaged',
+      icon: BookOpen,
+      title: "Daily Topics",
+      description: "Learn new vocabulary and grammar concepts with carefully curated daily lessons",
+      color: "from-blue-500 to-cyan-500"
     },
     {
-      icon: <Trophy className="h-6 w-6" />,
-      title: 'Daily Quizzes',
-      description: 'Test your knowledge and track your progress with daily challenges',
+      icon: Phone,
+      title: "Voice Calling",
+      description: "Practice speaking with native English speakers in real-time conversations",
+      color: "from-green-500 to-teal-500"
     },
     {
-      icon: <Mic className="h-6 w-6" />,
-      title: 'AI Pronunciation',
-      description: 'Get instant feedback on your pronunciation with AI technology',
-    },
-    {
-      icon: <Users className="h-6 w-6" />,
-      title: 'Referral Rewards',
-      description: 'Earn rewards by inviting friends to join the learning community',
-    },
-    {
-      icon: <GraduationCap className="h-6 w-6" />,
-      title: 'Expert Instructors',
-      description: 'Learn from experienced educators and industry professionals',
-    },
+      icon: Brain,
+      title: "Daily Quizzes",
+      description: "Test your knowledge and track your progress with engaging interactive quizzes",
+      color: "from-orange-500 to-red-500"
+    }
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 gradient-hero opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Master Communication Skills
-              <span className="block gradient-hero bg-clip-text text-transparent mt-2">
-                Through Real Conversations
-              </span>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="max-w-5xl w-full">
+          {/* Main Content */}
+          <div className="text-center mb-16">
+            {/* Header Logo */}
+            <div className="flex justify-center mb-8">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-teal-300 
+                              flex items-center justify-center text-white text-4xl font-bold shadow-xl">
+                ET
+              </div>
+            </div>
+
+            {/* Main Hero Text */}
+            <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6">
+              Welcome to <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">EduTalks</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of learners improving their English and communication skills through
-              daily practice, AI feedback, and real-time conversations.
+
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
+              Master English communication through the EduTalks platform
             </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Button size="lg" onClick={() => navigate('/login')} className="gradient-hero text-lg px-8">
-                Start Learning Free
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg px-8">
-                Sign In
-              </Button>
+
+            {/* Tagline */}
+            <p className="text-lg md:text-xl text-blue-50 mb-10 font-semibold">
+              🚀 Connect with real users, practice speaking, take quizzes, and improve faster than ever before!
+            </p>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+              <Link
+                to="/login"
+                className="px-8 py-4 text-lg border-3 border-white text-white rounded-xl hover:bg-white hover:text-blue-600 transition font-bold shadow-lg"
+              >
+                Login
+              </Link>
+
+              <Link
+                to="/register"
+                className="px-8 py-4 text-lg bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-xl 
+                           hover:from-yellow-300 hover:to-orange-300 transition font-bold shadow-lg"
+              >
+                Get Started
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-4">
-            Everything You Need to
-            <span className="gradient-hero bg-clip-text text-transparent"> Excel</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Comprehensive tools and features designed to accelerate your learning journey
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="p-6 hover:shadow-elevation-high transition-all hover:-translate-y-1 cursor-pointer border-2 hover:border-primary/50"
-              >
-                <div className="w-12 h-12 gradient-hero rounded-lg flex items-center justify-center mb-4 text-white">
-                  {feature.icon}
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition transform hover:scale-105 text-center border border-gray-100 dark:border-gray-700"
+                >
+                  {/* Icon Container */}
+                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${feature.color} flex items-center justify-center mx-auto mb-6 shadow-lg`}>
+                    <IconComponent className="h-10 w-10 text-white" />
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                    {feature.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </Card>
-            ))}
+              );
+            })}
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <Card className="gradient-hero p-12 text-center text-white max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold mb-4">Ready to Transform Your Skills?</h2>
-            <p className="text-lg mb-8 opacity-90">
-              Join our community today and start your journey towards fluent communication
+          {/* Bottom Tagline */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 text-center border border-gray-100 dark:border-gray-700 mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent mb-4">
+              Elevate Your English Communication
+            </h2>
+            <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto">
+              EduTalks is your premier platform for mastering English communication. 
+              With interactive learning tools, real-time practice opportunities, and personalized feedback, 
+              you'll achieve fluency faster and with confidence. Join thousands of learners worldwide who are 
+              transforming their English skills today!
             </p>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => navigate('/login')}
-              className="bg-white text-primary hover:bg-white/90 text-lg px-8"
-            >
-              Get Started Now
-            </Button>
-          </Card>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-sm text-blue-100 dark:text-gray-400">
+            © {new Date().getFullYear()} EduTalks — Master English. Connect with the World.
+          </p>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

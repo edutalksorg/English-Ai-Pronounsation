@@ -1,147 +1,134 @@
-import axiosClient from "./axiosClient";
+// src/lib/api/types/coupons.ts
+import { CouponService } from '../generated/services/CouponService';
+import type { CouponDto } from '../generated/models/CouponDto';
+import type { CreateCouponCommand } from '../generated/models/CreateCouponCommand';
+import type { UpdateCouponCommand } from '../generated/models/UpdateCouponCommand';
+import type { ValidateCouponQuery } from '../generated/models/ValidateCouponQuery';
 
-// ======================
-// 📘 COUPONS MODULE API
-// ======================
-
-// -------- ENUM-LIKE TYPES --------
-export type DiscountType = "Percentage" | "FixedAmount";
-export type ApplicableTo = "Both" | "Quiz" | "Subscription";
-export type CouponStatus = "Active" | "Inactive" | "Expired" | "Draft";
-
-// -------- REQUEST TYPES --------
-
-// ✅ Create Coupon
-export interface CreateCouponRequest {
+export type CouponCreatePayload = {
   code: string;
-  description: string;
-  discountType: DiscountType;
+  description?: string;
+  discountType?: "Percentage" | "Fixed";
   discountValue: number;
-  maxDiscountAmount: number;
-  minimumPurchaseAmount: number;
-  applicableTo: ApplicableTo;
-  specificQuizIds: string[];
-  specificPlanIds: string[];
-  maxTotalUsage: number;
-  maxUsagePerUser: number;
-  startDate: string;
-  expiryDate: string;
-}
+  maxDiscountAmount?: number;
+  minimumPurchaseAmount?: number;
+  applicableTo?: "Both" | "Quizzes" | "Plans";
+  specificQuizIds?: string[];
+  specificPlanIds?: string[];
+  maxTotalUsage?: number;
+  maxUsagePerUser?: number;
+  startDate?: string;
+  expiryDate?: string;
+};
 
-// ✅ Update Coupon
-export interface UpdateCouponRequest {
+export type CouponItem = {
   id: string;
-  description: string;
-  maxDiscountAmount: number;
-  minimumPurchaseAmount: number;
-  maxTotalUsage: number;
-  maxUsagePerUser: number;
-  expiryDate: string;
-  status: CouponStatus;
-}
+  code: string;
+  description?: string;
+  discountType?: "Percentage" | "Fixed";
+  discountValue: number;
+  maxDiscountAmount?: number;
+  minimumPurchaseAmount?: number;
+  applicableTo?: string;
+  specificQuizIds?: string[];
+  specificPlanIds?: string[];
+  maxTotalUsage?: number;
+  maxUsagePerUser?: number;
+  currentUsageCount?: number;
+  startDate?: string;
+  expiryDate?: string;
+  status?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  remainingUsage?: number;
+};
 
-// ✅ Validate Coupon
-export interface ValidateCouponRequest {
+export type CouponValidateRequest = {
   couponCode: string;
   amount: number;
-  itemType: string;
-  itemId: string;
-}
+  itemType?: string;
+  itemId?: string;
+};
 
-// ✅ Apply Coupon
-export interface ApplyCouponRequest {
-  couponCode: string;
-  originalAmount: number;
-  itemType: string;
-  itemId: string;
-  orderId: string;
-}
+export type CouponValidateResponse = {
+  discountAmount: number;
+  finalPrice: number;
+  discountPercentage?: number;
+};
 
-// -------- RESPONSE TYPES --------
-
-export interface CouponResponse {
-  id: string;
-  code: string;
-  description: string;
-  discountType: DiscountType;
-  discountValue: number;
-  maxDiscountAmount: number;
-  minimumPurchaseAmount: number;
-  applicableTo: ApplicableTo;
-  specificQuizIds: string[];
-  specificPlanIds: string[];
-  maxTotalUsage: number;
-  maxUsagePerUser: number;
-  currentUsageCount: number;
-  startDate: string;
-  expiryDate: string;
-  status: CouponStatus;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  remainingUsage: number;
-}
-
-// -------- QUERY PARAMETERS --------
-
-export interface CouponQuery {
-  page?: number;
-  pageSize?: number;
-  status?: string;
-  applicableTo?: string;
-  startDateFrom?: string;
-  startDateTo?: string;
-  searchTerm?: string;
-}
-
-// ======================
-// 📘 API METHODS
-// ======================
-
+// CouponsAPI wrapper for the Coupons.tsx page
 export const CouponsAPI = {
-  // CREATE COUPON
-  create: async (data: CreateCouponRequest): Promise<CouponResponse> => {
-    const res = await axiosClient.post("/api/v1/coupons", data);
-    return res.data;
+  /**
+   * List all coupons with pagination and search
+   */
+  async list({ page = 1, pageSize = 10, searchTerm = '' }) {
+    try {
+      const result = await CouponService.getApiV1Coupons(
+        page,
+        pageSize,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        searchTerm
+      );
+      return result || [];
+    } catch (error) {
+      console.error('Failed to list coupons:', error);
+      throw error;
+    }
   },
 
-  // GET ALL COUPONS
-  list: async (params?: CouponQuery): Promise<CouponResponse[]> => {
-    const res = await axiosClient.get("/api/v1/coupons", { params });
-    return res.data;
+  /**
+   * Create a new coupon
+   */
+  async create(payload: CreateCouponCommand) {
+    try {
+      const result = await CouponService.postApiV1Coupons(payload);
+      return result;
+    } catch (error) {
+      console.error('Failed to create coupon:', error);
+      throw error;
+    }
   },
 
-  // GET BY CODE
-  getByCode: async (code: string): Promise<CouponResponse> => {
-    const res = await axiosClient.get(`/api/v1/coupons/${code}`);
-    return res.data;
+  /**
+   * Update an existing coupon
+   */
+  async update(id: string, payload: UpdateCouponCommand) {
+    try {
+      const result = await CouponService.putApiV1Coupons(id, payload);
+      return result;
+    } catch (error) {
+      console.error('Failed to update coupon:', error);
+      throw error;
+    }
   },
 
-  // VALIDATE COUPON
-  validate: async (data: ValidateCouponRequest): Promise<{
-    discountAmount: number;
-    finalPrice: number;
-    discountPercentage: number;
-  }> => {
-    const res = await axiosClient.post("/api/v1/coupons/validate", data);
-    return res.data;
+  /**
+   * Delete a coupon
+   */
+  async delete(id: string) {
+    try {
+      const result = await CouponService.deleteApiV1Coupons(id);
+      return result;
+    } catch (error) {
+      console.error('Failed to delete coupon:', error);
+      throw error;
+    }
   },
 
-  // APPLY COUPON
-  apply: async (data: ApplyCouponRequest): Promise<any> => {
-    const res = await axiosClient.post("/api/v1/coupons/apply", data);
-    return res.data;
-  },
-
-  // UPDATE COUPON
-  update: async (id: string, data: UpdateCouponRequest): Promise<CouponResponse> => {
-    const res = await axiosClient.put(`/api/v1/coupons/${id}`, data);
-    return res.data;
-  },
-
-  // DELETE COUPON
-  delete: async (id: string): Promise<void> => {
-    const res = await axiosClient.delete(`/api/v1/coupons/${id}`);
-    return res.data;
+  /**
+   * Validate a coupon
+   */
+  async validate(payload: ValidateCouponQuery) {
+    try {
+      const result = await CouponService.postApiV1CouponsValidate(payload);
+      return result;
+    } catch (error) {
+      console.error('Failed to validate coupon:', error);
+      throw error;
+    }
   },
 };

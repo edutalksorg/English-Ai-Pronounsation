@@ -1,133 +1,102 @@
-// src/pages/ChangePassword.tsx
+// src/pages/Auth/ChangePassword.tsx
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from "react";
+  import { changePassword } from "@/lib/api/types/auth";
 
-// ✅ Default API import (from auth.ts)
-import AuthAPI from "@/lib/api/types/auth";
+const ChangePassword: React.FC = () => {
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-export default function ChangePassword() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { toast } = useToast();
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "New password and confirm password must match.",
-        variant: "destructive",
-      });
+    if (form.newPassword !== form.confirmPassword) {
+      alert("New passwords do not match.");
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
 
     try {
-      // ✅ Include confirmPassword (required by API)
-      await AuthAPI.changePassword({
-        currentPassword,
-        newPassword,
-        confirmPassword,
+      const payload = {
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+        confirmPassword: form.confirmPassword,
+      };
+
+      await changePassword(payload);
+
+      alert("Password changed successfully.");
+      setForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
 
-      toast({
-        title: "✅ Password updated successfully!",
-        description: "You can now log in with your new password.",
-      });
-
-      // Reset form fields
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
     } catch (err: any) {
-      const error =
-        err?.response?.data?.messages?.[0] ||
+      alert(
         err?.response?.data?.message ||
-        err?.message ||
-        "Something went wrong.";
-
-      toast({
-        title: "❌ Failed to update password",
-        description: error,
-        variant: "destructive",
-      });
+          err?.message ||
+          "Failed to change password."
+      );
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md shadow-lg border">
-        <CardHeader className="text-center">
-          <CardTitle>Change Password</CardTitle>
-          <CardDescription>Update your password securely</CardDescription>
-        </CardHeader>
+    <div className="max-w-md mx-auto mt-16 p-6 border rounded shadow">
+      <h2 className="text-xl font-semibold mb-4">Change Password</h2>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Current Password */}
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          name="currentPassword"
+          type="password"
+          placeholder="Current Password"
+          value={form.currentPassword}
+          onChange={onChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-            {/* New Password */}
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
+        <input
+          name="newPassword"
+          type="password"
+          placeholder="New Password"
+          value={form.newPassword}
+          onChange={onChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-            {/* Confirm Password */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+        <input
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm New Password"
+          value={form.confirmPassword}
+          onChange={onChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
-            <Button
-              disabled={isLoading}
-              type="submit"
-              className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
-            >
-              {isLoading ? "Saving..." : "Change Password"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-green-600 text-white p-2 rounded"
+        >
+          {loading ? "Changing..." : "Change Password"}
+        </button>
+      </form>
     </div>
   );
-}
+};
+
+export default ChangePassword;

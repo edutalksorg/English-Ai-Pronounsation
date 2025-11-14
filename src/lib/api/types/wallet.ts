@@ -1,35 +1,37 @@
-import axiosClient from "./axiosClient";
-
-const WalletAPI = {
-  /** ✅ Get current user's wallet balance */
-  getWalletBalance: async () => {
-    const res = await axiosClient.get("/api/v1/wallet/balance");
-    return res.data;
-  },
-
-  /** ✅ Add funds to wallet */
-  addFunds: async (amount: number) => {
-    const res = await axiosClient.post("/api/v1/wallet/add-funds", {
-      amount,
-    });
-    return res.data;
-  },
-
-  /** ✅ Withdraw funds */
-  withdrawFunds: async (amount: number) => {
-    const res = await axiosClient.post("/api/v1/wallet/withdraw", {
-      amount,
-    });
-    return res.data;
-  },
-
-  /** ✅ Get transaction history with filters */
-  getTransactions: async (params: any) => {
-    const res = await axiosClient.get("/api/v1/wallet/transactions", {
-      params,
-    });
-    return res.data;
-  },
+// src/lib/api/types/wallet.ts
+/** Raw server shapes (as returned by backend OpenAPI) */
+export type WalletBalanceRaw = {
+  balance: number | string;
+  currency: string;
+  frozenAmount?: number;
+  availableBalance?: number;
+  totalEarnings?: number;
+  totalSpent?: number;
+  pendingTransactions?: {
+    id: string;
+    amount: number;
+    type: string;
+    description?: string;
+    createdAt: string;
+  }[];
 };
 
-export default WalletAPI;
+/** Normalized shape used by the frontend */
+export type WalletBalance = {
+  balance: number;          // ALWAYS number (normalized)
+  currency: string;
+  frozenAmount?: number;
+  availableBalance?: number;
+  totalEarnings?: number;
+  totalSpent?: number;
+  raw?: WalletBalanceRaw;   // keep raw for debugging if needed
+};
+
+/** Single transaction normalized for UI */
+export type WalletTransaction = {
+  id: string;
+  title: string;           // user-friendly title/description
+  createdAt: string;       // ISO datetime string
+  amount: number;
+  type: "credit" | "debit";
+};
