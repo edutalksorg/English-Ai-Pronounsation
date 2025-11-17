@@ -9,7 +9,8 @@
       "/*.jpg",
       "/*.svg",
       "/*.ico",
-      "/*.woff*"
+      "/*.woff",
+      "/*.woff2"
     ]
   },
   "responseOverrides": {
