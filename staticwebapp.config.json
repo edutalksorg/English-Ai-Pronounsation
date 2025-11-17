@@ -1,18 +1,11 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [
-      "/assets/*",
-      "/*.css",
-      "/*.js",
-      "/*.png",
-      "/*.jpg",
-      "/*.svg"
-    ]
+    "exclude": ["/static/*", "/images/*"]
   },
-  "responseOverrides": {
-    "404": {
-      "rewrite": "/index.html"
-    }
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "application/javascript",
+    ".css": "text/css"
   }
 }
