@@ -31,7 +31,6 @@ const AdminInstructorReview: React.FC = () => {
       });
 
       alert("Review submitted successfully!");
-      console.log("Response:", res);
 
       // Reset form
       setId("");

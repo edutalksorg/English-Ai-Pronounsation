@@ -12,7 +12,6 @@ const ConfirmEmail: React.FC = () => {
     try {
       const res = await confirmEmail(userId, token);
       alert("Email confirmed successfully.");
-      console.log(res);
     } catch (err: any) {
       alert(err?.message ?? "Failed to confirm email.");
     } finally {

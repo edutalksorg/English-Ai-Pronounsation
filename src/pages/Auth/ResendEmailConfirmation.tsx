@@ -12,7 +12,6 @@ const ResendEmailConfirmation: React.FC = () => {
     try {
       const res = await resendEmailConfirmation(email);
       alert("Confirmation link sent successfully.");
-      console.log(res);
       setEmail("");
     } catch (err: any) {
       alert(err?.message ?? "Failed to resend confirmation.");

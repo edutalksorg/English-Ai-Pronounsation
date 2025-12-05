@@ -29,7 +29,6 @@ const ReferralsSettings: React.FC = () => {
     try {
       const res = await AdminReferralsAPI.updateSettings(settings as ReferralSettings);
       alert("Settings updated successfully");
-      console.log(res);
     } catch (err) {
       alert("Failed to update settings");
     } finally {

@@ -20,7 +20,6 @@ const ChangePassword: React.FC = () => {
     try {
       const res = await changePassword(form);
       alert("Password changed successfully.");
-      console.log(res);
     } catch (err: any) {
       alert(err?.message ?? "Failed to change password.");
     } finally {

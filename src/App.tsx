@@ -36,6 +36,13 @@ import UsersAdmin from "@/pages/Admin/Users";
 // ---------- Extras ----------
 import ApiSmoke from "@/pages/ApiSmoke";
 import Applications from "@/pages/Applications";
+
+// ---------- Pronunciation Module ----------
+import PracticePage from "@/pages/Pronunciation/PracticePage";
+import HistoryPage from "@/pages/Pronunciation/HistoryPage";
+import AttemptDetailPage from "@/pages/Pronunciation/AttemptDetailPage";
+import ParagraphsAdminPage from "@/pages/Pronunciation/ParagraphsAdminPage";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 /** Protect any route for authenticated users */
@@ -182,6 +189,40 @@ export default function App() {
         <Route path="/admin/topic-categories" element={<RequireAdmin><TopicCategoriesAdmin /></RequireAdmin>} />
         <Route path="/admin/users" element={<RequireAdmin><UsersAdmin /></RequireAdmin>} />
         <Route path="/admin/applications" element={<RequireAdmin><Applications /></RequireAdmin>} />
+
+        {/* Pronunciation Module */}
+        <Route
+          path="/pronunciation"
+          element={
+            <RequireAuth>
+              <PracticePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pronunciation/history"
+          element={
+            <RequireAuth>
+              <HistoryPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pronunciation/attempts/:id"
+          element={
+            <RequireAuth>
+              <AttemptDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/pronunciation/paragraphs"
+          element={
+            <RequireAdmin>
+              <ParagraphsAdminPage />
+            </RequireAdmin>
+          }
+        />
 
         {/* Utilities */}
         <Route path="/api-smoke" element={<ApiSmoke />} />

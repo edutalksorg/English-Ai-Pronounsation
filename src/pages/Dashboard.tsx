@@ -9,10 +9,14 @@ import { Phone, BookOpen, Brain, Mic } from "lucide-react";
  * won't break the whole page at runtime. Suspense + a small ErrorBoundary
  * will surface runtime errors instead of a white screen.
  */
-const VoiceCalling = lazy(() => import("@/components/dashboard/VoiceCalling"));
-const DailyTopics = lazy(() => import("@/components/dashboard/DailyTopics"));
-const DailyQuizzes = lazy(() => import("@/components/dashboard/DailyQuizzes"));
-const AIPronunciation = lazy(() => import("@/components/dashboard/AIPronunciation"));
+// Helper to normalize dynamic imports that may use named exports instead of default
+const loadComponent = (p: Promise<any>) =>
+  p.then((m) => ({ default: m.default ?? m?.defaultExport ?? m?.AIPronunciation ?? m?.defaultComponent ?? m }));
+
+const VoiceCalling = lazy(() => loadComponent(import("@/components/dashboard/VoiceCalling")));
+const DailyTopics = lazy(() => loadComponent(import("@/components/dashboard/DailyTopics")));
+const DailyQuizzes = lazy(() => loadComponent(import("@/components/dashboard/DailyQuizzes")));
+const AIPronunciation = lazy(() => loadComponent(import("@/components/dashboard/AIPronunciation")));
 // Wallet and Referrals panels intentionally removed from dashboard
 // per design: those features are accessible via the user dropdown menu.
 

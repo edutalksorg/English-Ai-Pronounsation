@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import axiosClient from "@/lib/api/types/axiosClient";
 import AuthAPI from "@/lib/api/types/auth"; // existing auth API helper (login/refresh endpoints)
 import { AuthService } from "@/lib/api/generated/services/AuthService";
 import type { AxiosResponse } from "axios";
@@ -65,7 +66,7 @@ function normalizeUser(raw: any): User {
  */
 async function fetchProfileFromServer(): Promise<User | null> {
   try {
-    const resp: AxiosResponse<any> = await axios.get("/api/v1/users/profile");
+    const resp: AxiosResponse<any> = await axiosClient.get("/api/v1/users/profile");
     const body = resp?.data ?? resp;
     // If API wraps in { data: { ... } } or ApiWrapper, attempt to find raw object
     const rawUser = body?.data ?? body;
@@ -100,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const token = localStorage.getItem(STORAGE.ACCESS);
       if (token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         const profile = await fetchProfileFromServer();
         if (profile) {
           localStorage.setItem(STORAGE.USER, JSON.stringify(profile));
@@ -142,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (accessToken) {
         localStorage.setItem(STORAGE.ACCESS, accessToken);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+        axiosClient.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
       } else {
         throw new Error("No access token in response");
       }
@@ -243,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(STORAGE.ACCESS);
       localStorage.removeItem(STORAGE.REFRESH);
       localStorage.removeItem(STORAGE.USER);
-      delete axios.defaults.headers.common["Authorization"];
+      delete axiosClient.defaults.headers.common["Authorization"];
       setUser(null);
       setIsLoading(false);
     }
